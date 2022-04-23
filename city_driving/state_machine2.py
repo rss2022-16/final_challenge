@@ -22,13 +22,18 @@ class CityDriver(object):
         self.line_follower_sub = rospy.Subscriber("/line_drive", AckermannDriveStamped, self.line_follower_cb)
         self.wall_follower_sub = rospy.Subscriber("/wall_drive", AckermannDriveStamped, self.wall_follower_cb, queue_size=10)
         self.stop_sign_sub = rospy.Subscriber("/stop_sign", Bool, self.stop_sign_cb)
-        self.car_wash__detector_sub = rospy.Subscriber("/car_wash_detector", Bool, self.car_wash_cb)
-        self.safety_sub = rospy.Subscriber("/safety", Odometry, self.odom_cb)
+        self.car_wash_detector_sub = rospy.Subscriber("/car_wash_detector", Bool, self.car_wash_cb) # always sending messages
+        self.blue_follower_sub = rospy.Subscriber("/blue_follower", AckermannDriveStamped, self.blue_follower_cb)
+        self.safety_sub = rospy.Subscriber("/safety", Odometry, self.safety_cb)
 
         DRIVE_TOPIC = rospy.get_param("~drive_topic")
         self.drive_pub = rospy.Publisher(DRIVE_TOPIC, AckermannDriveStamped, queue_size=10)
 
+        SAFETY_TOPIC = rospy.get_param("~safety_topic")
+        self.safety_pub = rospy.Publisher(SAFETY_TOPIC, AckermannDriveStamped, queue_size=10)
+
         self.state = "Default"
+        self.prev_blue = False
 
 
     def line_follower_cb(self, msg):
@@ -44,16 +49,29 @@ class CityDriver(object):
         self.state = "Stop"
         begin_time = rospy.Time.now()
         self.stop_cb(begin_time)
-
-    def car_wash_cb(self, msg):
-        # only called when car wash is detected
-        self.state = "car_wash_detected"
-        self.blue_follower()
-
+    
     def stop_cb(self, begin_time):
         while rospy.Time.now() - begin_time < 3:
             self.send_drive(0, 0)
         self.state = "Default"
+
+    def car_wash_cb(self, msg):
+        if msg.data == True:
+            self.state = "car_wash_detected"
+            self.blue_follower()
+            self.prev_blue = True
+        if msg.data == False and self.prev_blue == True:
+            self.state = "in_car_wash"
+            self.prev_blue = False
+        
+    def blue_follower_cb(self, msg):
+        if self.state == "car_wash_detected":
+            self.drive_pub.publish(msg)
+
+    def safety_cb(self, msg):
+        if self.state != "in_car_wash":
+            self.safety_pub.publish(msg)
+
     
     def send_drive(self, v, eta):
         """
