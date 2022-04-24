@@ -1,17 +1,20 @@
+#!/usr/bin/env python
+
 import rospy
 import numpy as np
 
 from msg import ConeLocation, ParkingError
 from ackermann_msgs.msg import AckermannDriveStamped
 from pure_pursuit import *
-from geometry_msgs.msg import Point
 
-class BlueFollower():
+class ParkingController():
     """
-    A controller for driving towards blue streamers.
-    Listens for a relative streamer location and publishes control commands.
+    A controller for parking in front of a cone.
+    Listens for a relative cone location and publishes control commands.
+    Can be used in the simulator and on the real robot.
     """
 
+    PARK_DIST = rospy.get_param("parking_controller/parking_distance") # meters; try playing with this number!
     VEL = rospy.get_param("parking_controller/velocity")  
 
     # PP Stuff
@@ -20,30 +23,28 @@ class BlueFollower():
     L = 0.375
 
     # Controller Stuff
-    #GOOD_EPS = rospy.get_param("parking_controller/goal_range")
-    GOOD_EPS = 0
+    GOOD_EPS = rospy.get_param("parking_controller/goal_range")
     PARK_TOL = rospy.get_param("parking_controller/y_tolerance")  
-    #ANG_EPS = abs(np.arctan(PARK_TOL / PARK_DIST))
+    ANG_EPS = abs(np.arctan(PARK_TOL / PARK_DIST))
 
     def __init__(self):
 
         #DRIVE_TOPIC = rospy.get_param("~drive_topic")    
-        rospy.Subscriber("/car_wash", ConeLocation, self.car_wash_callback)
-        self.drive_pub = rospy.Publisher("/blue_follower", AckermannDriveStamped, queue_size=10)
+        rospy.Subscriber("/line", ConeLocation, self.relative_cone_callback)
+        self.drive_pub = rospy.Publisher("/line_drive", AckermannDriveStamped, queue_size=10)
+        self.error_pub = rospy.Publisher("/parking_error", ParkingError, queue_size=10)
         
         self.relative_x = 0
         self.relative_y = 0
         self.backward = False
 
 
-    def car_wash_callback(self, msg):
+    def relative_cone_callback(self, msg):
         self.relative_x = msg.x_pos
         self.relative_y = msg.y_pos
         
-        # Might want to get rid of this so that the car drives through the streamers 
         # Are we here
-        #if abs(self.distance() - self.PARK_DIST) <= self.GOOD_EPS and abs(self.angle()) <= self.ANG_EPS:
-        if self.distance() <= self.GOOD_EPS:
+        if abs(self.distance() - self.PARK_DIST) <= self.GOOD_EPS and abs(self.angle()) <= self.ANG_EPS:
             
             ## DONE
             eta = 0
@@ -59,35 +60,35 @@ class BlueFollower():
             eta, vel = purepursuit(self.LOOKAHEAD_DISTANCE, self.L, self.VEL, 
                 self.LIDAR_TO_BASE_AXEL, 0, 0, waypoints)
             
-            # # Backward PP if we are close
-            # if self.distance() < self.PARK_DIST - self.GOOD_EPS:
-            #     self.backward = True
+            # Backward PP if we are close
+            if self.distance() < self.PARK_DIST - self.GOOD_EPS:
+                self.backward = True
 
-            # # Forward PP if we are far
-            # if self.distance() > self.PARK_DIST + self.GOOD_EPS:
-            #     self.backward = False
+            # Forward PP if we are far
+            if self.distance() > self.PARK_DIST + self.GOOD_EPS:
+                self.backward = False
 
-            # # Reverse PP
-            # if self.backward:
-            #     eta = -1 * eta
-            #     vel = -1 * vel
+            # Reverse PP
+            if self.backward:
+                eta = -1 * eta
+                vel = -1 * vel
                 
         self.send_drive(eta, vel)
-        #self.error_publisher()
+        self.error_publisher()
 
 
-    # def error_publisher(self):
-    #     """
-    #     Publish the error between the car and the cone. We will view this
-    #     with rqt_plot to plot the success of the controller
-    #     """
-    #     error_msg = ParkingError()
+    def error_publisher(self):
+        """
+        Publish the error between the car and the cone. We will view this
+        with rqt_plot to plot the success of the controller
+        """
+        error_msg = ParkingError()
 
-    #     error_msg.x_error = self.relative_x
-    #     error_msg.y_error = self.relative_y
-    #     error_msg.distance_error = self.distance()
+        error_msg.x_error = self.relative_x
+        error_msg.y_error = self.relative_y
+        error_msg.distance_error = self.distance()
         
-    #     self.error_pub.publish(error_msg)
+        self.error_pub.publish(error_msg)
 
 
     def send_drive(self, eta, vel):
@@ -110,8 +111,8 @@ class BlueFollower():
 
 if __name__ == '__main__':
     try:
-        rospy.init_node('BlueFollower', anonymous=True)
-        BlueFollower()
+        rospy.init_node('ParkingController', anonymous=True)
+        ParkingController()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass

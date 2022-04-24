@@ -34,6 +34,7 @@ class CityDriver(object):
 
         self.state = "Default"
         self.prev_blue = False
+        self.exit_wash = False
 
 
     def line_follower_cb(self, msg):
@@ -58,18 +59,22 @@ class CityDriver(object):
     def car_wash_cb(self, msg):
         if msg.data == True:
             self.state = "car_wash_detected"
-            self.blue_follower()
             self.prev_blue = True
         if msg.data == False and self.prev_blue == True:
             self.state = "in_car_wash"
             self.prev_blue = False
+            self.exit_wash = True
+        elif msg.data == False and self.exit_wash == True: # exit from the car wash
+            self.state = "Default"
+            self.exit_wash = False
         
     def blue_follower_cb(self, msg):
         if self.state == "car_wash_detected":
             self.drive_pub.publish(msg)
 
     def safety_cb(self, msg):
-        if self.state != "in_car_wash":
+        # Turn off safety controller when driving towards car wash and when in the car wash
+        if self.state != "in_car_wash" and self.state != "car_wash_detected":
             self.safety_pub.publish(msg)
 
     
@@ -84,9 +89,6 @@ class CityDriver(object):
         msg.drive.speed = v
         self.drive_pub.publish(msg)
         
-
-    
-    
 
 
 if __name__=="__main__":

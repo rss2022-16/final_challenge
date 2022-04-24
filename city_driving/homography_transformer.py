@@ -43,8 +43,11 @@ METERS_PER_INCH = 0.0254
 
 class HomographyTransformer:
     def __init__(self):
-        self.cone_px_sub = rospy.Subscriber("/relative_blue_px", ConeLocationPixel, self.car_wash_detection_callback)
-        self.cone_pub = rospy.Publisher("/car_wash", ConeLocation, queue_size=10)
+        self.blue_px_sub = rospy.Subscriber("/relative_blue_px", ConeLocationPixel, self.car_wash_detection_callback)
+        self.blue_pub = rospy.Publisher("/car_wash", ConeLocation, queue_size=10)
+
+        self.line_px_sub = rospy.Subscriber("/relative_cone_px", ConeLocationPixel, self.line_detection_callback)
+        self.line_pub = rospy.Publisher("/line", ConeLocation, queue_size=10)
 
 
         self.drawing = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color_mouse_left", Point, self.call_marker)
@@ -91,7 +94,23 @@ class HomographyTransformer:
         relative_xy_msg.x_pos = x
         relative_xy_msg.y_pos = y
 
-        self.cone_pub.publish(relative_xy_msg)
+        self.blue_pub.publish(relative_xy_msg)
+        self.draw_marker(x,y,"base_link")
+
+    def line_detection_callback(self, msg):
+        #Extract information from message
+        u = msg.u
+        v = msg.v
+
+        #Call to main function
+        x, y = self.transformUvToXy(u, v)
+
+        #Publish relative xy position of object in real world
+        relative_xy_msg = ConeLocation()
+        relative_xy_msg.x_pos = x
+        relative_xy_msg.y_pos = y
+
+        self.line_pub.publish(relative_xy_msg)
         self.draw_marker(x,y,"base_link")
 
     def transformUvToXy(self, u, v):
