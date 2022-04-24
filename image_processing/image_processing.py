@@ -3,12 +3,12 @@ import numpy as np
 import scipy
 import math
 
-height = 1080
-width = 1920
+height = 376
+width = 672
 mid = int(width/2)
 
 img = cv2.imread('lane.jpg')
-img = cv2.resize(img, (1920, 1080))
+img = cv2.resize(img, (width, height))
 grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 cv2.namedWindow("out", cv2.WINDOW_NORMAL)
 
@@ -40,27 +40,41 @@ color_canny = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
 #         pt2 = (int(x0 - 1000.0*(-b)), int(y0 - 1000.0*(a)))
 #         cv2.line(color_canny, pt1, pt2, (0,0,255), 1, cv2.LINE_AA)
 
-#find all straight lines and mark them red
-linesP = cv2.HoughLinesP(canny, 1, np.pi / 180, 50, None, 80, 15)
+
+linesP = cv2.HoughLinesP(canny, 1, np.pi / 180, 50, None, 80, 10)
 left = linesP[0][0]
 right = linesP[1][0]
-if linesP is not None:
-    for i in range(0, len(linesP)):
-        l = linesP[i][0]
-        bot_y = max(l[1], l[3])
-        if(l[0] <= mid): 
-            if(l[0] > left[0] and bot_y > max(left[1], left[3])):
-                left = l
-        else:
-            if(l[0] < right[0] and bot_y > max(left[1], left[3])):
-                right = l
-            
-        cv2.line(color_canny, (l[0], l[1]), (l[2], l[3]), (0,0,255), 2, cv2.LINE_AA)
+
+#filter out horizontal lines
+vertical_lines = []
+for line in linesP:
+    l = line[0]
+    angle = np.arctan2(abs(l[3]-l[1]), l[2]-l[0])
+    if(np.pi/6 < angle < np.pi*5/6):
+        vertical_lines.append(line)
+
+left = None
+right = None
+
+for i in range(0, len(vertical_lines)):
+    l = vertical_lines[i][0]
+    bot_y = max(l[1], l[3])
+    if(l[0] <= mid): 
+        if left is None:
+            left = l
+        elif(l[0] > left[0] and bot_y >= max(left[1], left[3])):
+            left = l
+    else:
+        if right is None:
+            right = l
+        if(l[0] < right[0] and bot_y >= max(right[1], right[3])):
+            right = l
+        
+    cv2.line(color_canny, (l[0], l[1]), (l[2], l[3]), (0,0,255), 2, cv2.LINE_AA)
 
 #mark "closest" two lines in green
 cv2.line(color_canny, (left[0], left[1]), (left[2], left[3]), (0,255,0), 2, cv2.LINE_AA)
 cv2.line(color_canny, (right[0], right[1]), (right[2], right[3]), (0,255,0), 2, cv2.LINE_AA)
-
 
 
 
