@@ -19,6 +19,7 @@ class CityDriver(object):
 
     def __init__(self):
         self.odom_topic = rospy.get_param("~odom_topic")
+        self.line_detector_sub = rospy.Subscriber("/line_detector", Bool, self.line_detected_cb) # always sending messages
         self.line_follower_sub = rospy.Subscriber("/line_drive", AckermannDriveStamped, self.line_follower_cb)
         self.wall_follower_sub = rospy.Subscriber("/wall_drive", AckermannDriveStamped, self.wall_follower_cb, queue_size=10)
         self.stop_sign_sub = rospy.Subscriber("/stop_sign", Bool, self.stop_sign_cb)
@@ -34,8 +35,12 @@ class CityDriver(object):
 
         self.state = "Default"
         self.prev_blue = False
-        self.exit_wash = False
+        # self.exit_wash = False
 
+    def line_detected_cb(self, msg):
+        if msg.data == True and self.state == "in_car_wash":
+            self.state = "Default"
+            self.drive_pub.publish(msg)
 
     def line_follower_cb(self, msg):
         if self.state == "Default":
@@ -63,10 +68,10 @@ class CityDriver(object):
         if msg.data == False and self.prev_blue == True:
             self.state = "in_car_wash"
             self.prev_blue = False
-            self.exit_wash = True
-        elif msg.data == False and self.exit_wash == True: # exit from the car wash
-            self.state = "Default"
-            self.exit_wash = False
+            # self.exit_wash = True
+        # elif msg.data == False and self.exit_wash == True: # exit from the car wash
+        #     self.state = "Default"
+        #     self.exit_wash = False
         
     def blue_follower_cb(self, msg):
         if self.state == "car_wash_detected":

@@ -91,7 +91,7 @@ class HomographyTransformer:
 
         #Publish relative xy position of object in real world
         relative_xy_msg = ConeLocation()
-        relative_xy_msg.x_pos = x
+        relative_xy_msg.x_pos = x + 1 #add 1 meter so car drives through streamers
         relative_xy_msg.y_pos = y
 
         self.blue_pub.publish(relative_xy_msg)
