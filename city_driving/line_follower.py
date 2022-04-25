@@ -14,8 +14,8 @@ class ParkingController():
     Can be used in the simulator and on the real robot.
     """
 
-    PARK_DIST = rospy.get_param("parking_controller/parking_distance") # meters; try playing with this number!
-    VEL = rospy.get_param("parking_controller/velocity")  
+    PARK_DIST = rospy.get_param("line_follower/parking_distance") # meters; try playing with this number!
+    VEL = rospy.get_param("line_follower/velocity")  
 
     # PP Stuff
     LIDAR_TO_BASE_AXEL = -0.35 # Temporary parameter
@@ -23,8 +23,8 @@ class ParkingController():
     L = 0.375
 
     # Controller Stuff
-    GOOD_EPS = rospy.get_param("parking_controller/goal_range")
-    PARK_TOL = rospy.get_param("parking_controller/y_tolerance")  
+    GOOD_EPS = rospy.get_param("line_follower/goal_range")
+    PARK_TOL = rospy.get_param("line_follower/y_tolerance")  
     ANG_EPS = abs(np.arctan(PARK_TOL / PARK_DIST))
 
     def __init__(self):
