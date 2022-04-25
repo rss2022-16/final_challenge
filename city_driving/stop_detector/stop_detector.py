@@ -3,7 +3,8 @@ import rospy
 
 import numpy as np
 from sensor_msgs.msg import Image
-from std_msgs.msg import Bool, String
+from std_msgs.msg import Bool
+from geometry_msgs.msg import Point
 from detector import StopSignDetector
 
 class SignDetector:
