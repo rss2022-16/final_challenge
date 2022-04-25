@@ -21,8 +21,8 @@ class WallFollower:
     SCAN_TOPIC = rospy.get_param("scan_topic")
     #DRIVE_TOPIC = rospy.get_param("wall_follower/drive_topic")
     SIDE = rospy.get_param("side")
-    VELOCITY = rospy.get_param("wall_follower/velocity")
-    DESIRED_DISTANCE = rospy.get_param("wall_follower/desired_distance")
+    VELOCITY = rospy.get_param("wall_follower_velocity")
+    DESIRED_DISTANCE = rospy.get_param("wall_follower_desired_distance")
 
     ## Detector params
     LINE_DETECTOR_MIN = 0

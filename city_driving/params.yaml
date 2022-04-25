@@ -11,12 +11,12 @@ collision_interval: 0.5
 length: .15
 
 side: 1
-wall_follower/velocity: 0.2
-wall_follower/desired_distance: 1.
+wall_follower_velocity: 0.2
+wall_follower_desired_distance: 1.
 
-parking_controller/velocity: 0.2
+parking_controller_velocity: 0.2
 
-line_follower/velocity: 1.
-line_follower/parking_distance: 0.3
-line_follower/goal_range: 0.05
-line_follower/y_tolerance: 0.05
+line_follower_velocity: .6
+line_follower_parking_distance: 0.3
+line_follower_goal_range: 0.05
+line_follower_y_tolerance: 0.05

@@ -18,7 +18,7 @@ class CityDriver(object):
     """
 
     def __init__(self):
-        self.odom_topic = rospy.get_param("~odom_topic")
+        # self.odom_topic = rospy.get_param("~odom_topic")
         self.line_detector_sub = rospy.Subscriber("/line_detector", Bool, self.line_detected_cb) # always sending messages
         self.line_follower_sub = rospy.Subscriber("/line_drive", AckermannDriveStamped, self.line_follower_cb)
         self.wall_follower_sub = rospy.Subscriber("/wall_drive", AckermannDriveStamped, self.wall_follower_cb, queue_size=10)

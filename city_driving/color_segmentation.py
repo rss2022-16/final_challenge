@@ -56,7 +56,7 @@ def cd_color_segmentation(img, template, color_to_detect = "orange"):
 
     x,y,w,h = cv2.boundingRect(contours[0])
     #out = cv2.rectangle(img, (x,y), (x+w, y+h),(0,255,0),2)
-	#image_print(out)
+	#image_print(out)e
     bounding_box = ((x,y),(x+w,y+h))
 
     # Return bounding box

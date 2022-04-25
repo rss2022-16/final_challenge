@@ -23,8 +23,8 @@ class ParkingController():
     L = 0.375
 
     # Controller Stuff
-    GOOD_EPS = rospy.get_param("line_follower/goal_range")
-    PARK_TOL = rospy.get_param("line_follower/y_tolerance")  
+    GOOD_EPS = rospy.get_param("line_follower_goal_range")
+    PARK_TOL = rospy.get_param("line_follower_y_tolerance")  
     ANG_EPS = abs(np.arctan(PARK_TOL / PARK_DIST))
 
     def __init__(self):

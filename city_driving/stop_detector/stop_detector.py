@@ -10,10 +10,12 @@ from detector import StopSignDetector
 class SignDetector:
     def __init__(self):
         self.detector = StopSignDetector()
-        self.stop_sign_pub = rospy.Publisher("/relative_cone_px", Point, queue_size=10)
-        self.img_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.callback)
+        self.stop_sign_pub = rospy.Publisher("/stop_sign", Bool, queue_size=10)
+        self.img_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.img_callback)
+        self.depth_sub = rospy.Subscriber("/zed/zed_node/depth/depth_registered", Image, self.depth_callback)
+        self.point = None
 
-    def callback(self, img_msg):
+    def img_callback(self, img_msg):
         # Process image without CV Bridge
         np_img = np.frombuffer(img_msg.data, dtype=np.uint8).reshape(img_msg.height, img_msg.width, -1)
         bgr_img = np_img[:,:,:-1]
@@ -25,8 +27,22 @@ class SignDetector:
             x_min, y_min, x_max, y_max = tuple(bounded_box)
             pixel = Point()
             pixel.x = int((x_min+x_max)/2)
-            pixel.y = y_min
-            self.stop_sign_pub.publish(pixel)
+            pixel.y = int((y_min+y_max)/2)
+            self.point = pixel
+
+    def depth_callback(self, img_msg):
+
+        if self.point != None:
+            # Logic
+            np_img = np.frombuffer(img_msg.data, dtype=np.uint8).reshape(img_msg.height, img_msg.width, -1)
+            bgr_img = np_img[:,:,:-1]
+
+            msg = Bool()
+            msg.data = True
+            self.depth_sub.publish(msg)
+
+            self.point = None
+
 
 
 if __name__=="__main__":

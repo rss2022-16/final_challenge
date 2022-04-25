@@ -12,7 +12,7 @@ class BlueFollower():
     Listens for a relative streamer location and publishes control commands.
     """
 
-    VEL = rospy.get_param("parking_controller/velocity")  
+    VEL = rospy.get_param("parking_controller_velocity")  
 
     # PP Stuff
     LIDAR_TO_BASE_AXEL = -0.35 # Temporary parameter
