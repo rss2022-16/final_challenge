@@ -25,7 +25,7 @@ class CityDriver(object):
         self.stop_sign_sub = rospy.Subscriber("/stop_sign", Bool, self.stop_sign_cb)
         self.car_wash_detector_sub = rospy.Subscriber("/car_wash_detector", Bool, self.car_wash_cb) # always sending messages
         self.blue_follower_sub = rospy.Subscriber("/blue_follower", AckermannDriveStamped, self.blue_follower_cb)
-        self.safety_sub = rospy.Subscriber("/safety", Odometry, self.safety_cb)
+        self.safety_sub = rospy.Subscriber("/safety", AckermannDriveStamped, self.safety_cb)
 
         DRIVE_TOPIC = rospy.get_param("~drive_topic")
         self.drive_pub = rospy.Publisher(DRIVE_TOPIC, AckermannDriveStamped, queue_size=10)

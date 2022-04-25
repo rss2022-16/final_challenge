@@ -22,7 +22,7 @@ class BlueFollower():
     # Controller Stuff
     #GOOD_EPS = rospy.get_param("parking_controller/goal_range")
     GOOD_EPS = 0
-    PARK_TOL = rospy.get_param("parking_controller/y_tolerance")  
+    #PARK_TOL = rospy.get_param("parking_controller/y_tolerance")  
     #ANG_EPS = abs(np.arctan(PARK_TOL / PARK_DIST))
 
     def __init__(self):
