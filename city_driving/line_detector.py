@@ -8,8 +8,8 @@ from cv_bridge import CvBridge, CvBridgeError
 
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point #geometry_msgs not in CMake file
-from msg import ConeLocationPixel
-from std_msgs import Bool
+# from msg import ConeLocationPixel
+from std_msgs.msg import Bool
 
 # import your color segmentation algorithm; call this function in ros_image_callback!
 from color_segmentation import cd_color_segmentation
@@ -25,7 +25,7 @@ class LineDetector():
         self.LineFollower = True
 
         # Subscribe to ZED camera RGB frames
-        self.cone_pub = rospy.Publisher("/relative_cone_px", ConeLocationPixel, queue_size=10)
+        self.cone_pub = rospy.Publisher("/relative_cone_px", Point, queue_size=10)
         self.line_detector_pub = rospy.Publisher("/line_detector", Bool, queue_size=10)
         #self.debug_pub = rospy.Publisher("/cone_debug_img", Image, queue_size=10)
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
@@ -43,12 +43,12 @@ class LineDetector():
         image = image[215:235, :, :] 
         bbox = cd_color_segmentation(image, None, "orange")
         bottom_pixel = ( (bbox[1][0] + bbox[0][0])/2.0, bbox[1][1])
-        pixel = ConeLocationPixel()
+        pixel = Point()
         #print (bottom_pixel)
         u = bottom_pixel[0] + 0
         v = bottom_pixel[1] + 215
-        pixel.u = u
-        pixel.v = v
+        pixel.y = u
+        pixel.x = v
         #print (pixel.v)
         self.cone_pub.publish(pixel)
 

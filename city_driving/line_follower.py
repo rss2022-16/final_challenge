@@ -3,7 +3,8 @@
 import rospy
 import numpy as np
 
-from msg import ConeLocation, ParkingError
+# from msg import ConeLocation, ParkingError
+from geometry_msgs.msg import Point
 from ackermann_msgs.msg import AckermannDriveStamped
 from pure_pursuit import *
 
@@ -14,12 +15,12 @@ class ParkingController():
     Can be used in the simulator and on the real robot.
     """
 
-    PARK_DIST = rospy.get_param("line_follower/parking_distance") # meters; try playing with this number!
-    VEL = rospy.get_param("line_follower/velocity")  
+    PARK_DIST = rospy.get_param("line_follower_parking_distance") # meters; try playing with this number!
+    VEL = rospy.get_param("line_follower_velocity")  
 
     # PP Stuff
     LIDAR_TO_BASE_AXEL = -0.35 # Temporary parameter
-    LOOKAHEAD_DISTANCE = .6
+    LOOKAHEAD_DISTANCE = .4
     L = 0.375
 
     # Controller Stuff
@@ -30,9 +31,9 @@ class ParkingController():
     def __init__(self):
 
         #DRIVE_TOPIC = rospy.get_param("~drive_topic")    
-        rospy.Subscriber("/line", ConeLocation, self.relative_cone_callback)
+        rospy.Subscriber("/line", Point, self.relative_cone_callback)
         self.drive_pub = rospy.Publisher("/line_drive", AckermannDriveStamped, queue_size=10)
-        self.error_pub = rospy.Publisher("/parking_error", ParkingError, queue_size=10)
+        # self.error_pub = rospy.Publisher("/parking_error", ParkingError, queue_size=10)
         
         self.relative_x = 0
         self.relative_y = 0
@@ -40,8 +41,8 @@ class ParkingController():
 
 
     def relative_cone_callback(self, msg):
-        self.relative_x = msg.x_pos
-        self.relative_y = msg.y_pos
+        self.relative_x = msg.x
+        self.relative_y = msg.y
         
         # Are we here
         if abs(self.distance() - self.PARK_DIST) <= self.GOOD_EPS and abs(self.angle()) <= self.ANG_EPS:
@@ -74,21 +75,21 @@ class ParkingController():
                 vel = -1 * vel
                 
         self.send_drive(eta, vel)
-        self.error_publisher()
+        # self.error_publisher()
 
 
-    def error_publisher(self):
-        """
-        Publish the error between the car and the cone. We will view this
-        with rqt_plot to plot the success of the controller
-        """
-        error_msg = ParkingError()
+    # def error_publisher(self):
+    #     """
+    #     Publish the error between the car and the cone. We will view this
+    #     with rqt_plot to plot the success of the controller
+    #     """
+    #     error_msg = ParkingError()
 
-        error_msg.x_error = self.relative_x
-        error_msg.y_error = self.relative_y
-        error_msg.distance_error = self.distance()
+    #     error_msg.x_error = self.relative_x
+    #     error_msg.y_error = self.relative_y
+    #     error_msg.distance_error = self.distance()
         
-        self.error_pub.publish(error_msg)
+    #     self.error_pub.publish(error_msg)
 
 
     def send_drive(self, eta, vel):

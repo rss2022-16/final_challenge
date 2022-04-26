@@ -10,7 +10,7 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker
-from msg import ConeLocation, ConeLocationPixel
+# from msg import ConeLocation, ConeLocationPixel
 from geometry_msgs.msg import Point
 
 #The following collection of pixel locations and corresponding relative
@@ -43,11 +43,11 @@ METERS_PER_INCH = 0.0254
 
 class HomographyTransformer:
     def __init__(self):
-        self.blue_px_sub = rospy.Subscriber("/relative_blue_px", ConeLocationPixel, self.car_wash_detection_callback)
-        self.blue_pub = rospy.Publisher("/car_wash", ConeLocation, queue_size=10)
+        self.blue_px_sub = rospy.Subscriber("/relative_blue_px", Point, self.car_wash_detection_callback)
+        self.blue_pub = rospy.Publisher("/car_wash", Point, queue_size=10)
 
-        self.line_px_sub = rospy.Subscriber("/relative_cone_px", ConeLocationPixel, self.line_detection_callback)
-        self.line_pub = rospy.Publisher("/line", ConeLocation, queue_size=10)
+        self.line_px_sub = rospy.Subscriber("/relative_cone_px", Point, self.line_detection_callback)
+        self.line_pub = rospy.Publisher("/line", Point, queue_size=10)
 
 
         self.drawing = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color_mouse_left", Point, self.call_marker)
@@ -83,16 +83,16 @@ class HomographyTransformer:
 
     def car_wash_detection_callback(self, msg):
         #Extract information from message
-        u = msg.u
-        v = msg.v
+        u = msg.y
+        v = msg.x
 
         #Call to main function
         x, y = self.transformUvToXy(u, v)
 
         #Publish relative xy position of object in real world
-        relative_xy_msg = ConeLocation()
-        relative_xy_msg.x_pos = x + 1 #add 1 meter so car drives through streamers
-        relative_xy_msg.y_pos = y
+        relative_xy_msg = Point()
+        relative_xy_msg.x = x + 1 #add 1 meter so car drives through streamers
+        relative_xy_msg.y = y
 
         self.blue_pub.publish(relative_xy_msg)
         self.draw_marker(x,y,"base_link")
@@ -106,9 +106,9 @@ class HomographyTransformer:
         x, y = self.transformUvToXy(u, v)
 
         #Publish relative xy position of object in real world
-        relative_xy_msg = ConeLocation()
-        relative_xy_msg.x_pos = x
-        relative_xy_msg.y_pos = y
+        relative_xy_msg = Point()
+        relative_xy_msg.x = x
+        relative_xy_msg.y = y
 
         self.line_pub.publish(relative_xy_msg)
         self.draw_marker(x,y,"base_link")
