@@ -1,15 +1,14 @@
 <launch>
 
-  <!-- Launch the parking controller on the real robot. Launches safety controller, controller node, cone detection node, and the homography transformer -->
-  <!-- Edit this to launch your safety controller you implemented in Lab 3! -->
+  <include file="$(find zed_wrapper)/launch/zed.launch" />
+
   <node pkg="safety_controller" name="safety_controller" type="safety_controller.py" output="screen">
-	<rosparam command="load" file="$(find safety_controller)/params.yaml"/>
+	 <rosparam command="load" file="$(find safety_controller)/params.yaml"/>
   </node>
 
   <node pkg="race" name="lane_follower" type="lane_follower.py" output="screen">
   	<param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/navigation" />
+    <rosparam command="load" file="$(find race)/race_params.yaml"/>
   </node>
-
-  <node pkg="image_transport" name="republish" type="republish" args="raw in:=/cone_debug_img out:=/cone_debug_img_compressed" output="screen"></node>
 
 </launch>

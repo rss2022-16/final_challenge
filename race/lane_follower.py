@@ -19,38 +19,36 @@ class LaneFollower():
     A controller to drive in between two lanes
     Extracts lane location from racecar's camera images
     """
-    LIDAR_TO_BASE_AXEL = -0.35 
-    LOOKAHEAD_DISTANCE = .6
-    L = 0.375
-    VEL = 2
-    EXDEND_D = 10
 
     def __init__(self):
         DRIVE_TOPIC = rospy.get_param("~drive_topic") #"/vesc/ackermann_cmd_mux/input/navigation"
-        #VEL = rospy.get_param("lane_follower/velocity")
-        
-
+        self.vel = rospy.get_param("~vel")
+        self.lidar_to_base_axel = rospy.get_param("~lidar_to_base_axel")
+        self.lookahead_distance = rospy.get_param("~lookahead_distance")
+        self.L = rospy.get_param("~L")
+        self.extend_dist = rospy.get_param("~extend_dist")
         self.drive_pub = rospy.Publisher(DRIVE_TOPIC, AckermannDriveStamped, queue_size=10)
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
 
-        self.vel = self.VEL
+        
         self.bridge = CvBridge()
+
+        self.pathFinder = Detector()
 
 
     def image_callback(self, msg):
         img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
 
-        pathFinder = Detector()
-        pt1, pt2 = pathFinder.imgtoline(img)
+        pt1, pt2 = self.pathFinder.imgtoline(img)
         x, y = self.extendLine(pt1, pt2)
 
         if x is not None:
 
-            waypoints = np.array(([self.LIDAR_TO_BASE_AXEL, 0], \
-                    [self.LIDAR_TO_BASE_AXEL + x, y]))
+            waypoints = np.array(([self.lidar_to_base_axel, 0], \
+                    [self.lidar_to_base_axel + x, y]))
 
-            eta, vel = purepursuit(self.LOOKAHEAD_DISTANCE, self.L, self.VEL, 
-                self.LIDAR_TO_BASE_AXEL, 0, 0, waypoints)
+            eta, vel = purepursuit(self.lookahead_distance, self.L, self.vel, 
+                self.lidar_to_base_axel, 0, 0, waypoints)
             
             self.send_drive(eta, vel)
 
@@ -68,7 +66,7 @@ class LaneFollower():
 
         m = (y2-y1)/(x2-x1)
 
-        x = np.sqrt(self.EXDEND_D**2/(m**2+1))
+        x = np.sqrt(self.extend_dist**2/(m**2+1))
         y = m*x 
 
         return (x1+x, y1+y)
