@@ -75,10 +75,8 @@ class Detector():
         for line in linesP:
             l = line[0]
             if l[3] > l[1]:
-                temp1, temp2 = l[1], l[3]
-                l[3], l[1] = temp1, temp2
-                temp1, temp2 = l[0], l[2]
-                l[2], l[0] = temp1, temp2
+                l[3], l[1] = l[1], l[3]
+                l[2], l[0] = l[0], l[2]
 
             (x1, y1) = self.transform(l[0], l[1])
             (x2, y2) = self.transform(l[2], l[3])
@@ -86,24 +84,6 @@ class Detector():
 
         # Find lanes
         left, right = None, None
-        # for r in reallines:
-
-        #     dist = np.sqrt(r[0]**2 + r[1]**2)
-        #     angle = np.arctan2(r[3]-r[1], r[2]-r[0])
-
-        #     # Left lane?
-        #     if r[1] > 0 and abs(angle) < self.angle_cutoff:
-        #         if left is None:
-        #             left = r
-        #         elif dist < np.sqrt(left[0]**2 + left[1]**2):
-        #             left = r
-
-        #     # Right lane?
-        #     if r[1] < 0 and abs(angle) < self.angle_cutoff:
-        #         if right is None:
-        #             right = r
-        #         elif dist < np.sqrt(right[0]**2 + right[1]**2):
-        #             right = r
         for i in range(len(linesP)):
             r = reallines[i]
             l = linesP[i][0]
@@ -129,16 +109,16 @@ class Detector():
                     right = r
                     ur = l
 
-        print(ur[0], ur[1], ur[2], ur[3])
-        print(right[0], right[1], right[2], right[3])
-        print(ul[0], ul[1], ul[2], ul[3])
-        print(left[0], left[1], left[2], left[3])
+        # print(ur[0], ur[1], ur[2], ur[3])
+        # print(right[0], right[1], right[2], right[3])
+        # print(ul[0], ul[1], ul[2], ul[3])
+        # print(left[0], left[1], left[2], left[3])
 
         # If we detected lanes
         if left is not None and right is not None:
 
-            cv2.line(color_canny, (ul[0], ul[1]), (ul[2], ul[3]), (0,255,0), 3, cv2.LINE_AA)
-            cv2.line(color_canny, (ur[0], ur[1]), (ur[2], ur[3]), (0,255,0), 3, cv2.LINE_AA)
+            # cv2.line(color_canny, (ul[0], ul[1]), (ul[2], ul[3]), (0,255,0), 3, cv2.LINE_AA)
+            # cv2.line(color_canny, (ur[0], ur[1]), (ur[2], ur[3]), (0,255,0), 3, cv2.LINE_AA)
 
             # Average the two lanes
             bot_x = left[0]/2 + right[0]/2
@@ -146,14 +126,14 @@ class Detector():
             top_x = left[2]/2 + right[2]/2
             top_y = left[3]/2 + right[3]/2
 
-            ## Temp
-            bot_u = int(ul[0]/2 + ur[0]/2)
-            bot_v = int(ul[1]/2 + ur[1]/2)
-            top_u = int(ul[2]/2 + ur[2]/2)
-            top_v = int(ul[3]/2 + ur[3]/2)
-            cv2.line(color_canny, (bot_u, bot_v), (top_u, top_v), (255,0,0), 3, cv2.LINE_AA)
-            cv2.imshow('out', color_canny)
-            cv2.waitKey(0)
+            # ## Temp
+            # bot_u = int(ul[0]/2 + ur[0]/2)
+            # bot_v = int(ul[1]/2 + ur[1]/2)
+            # top_u = int(ul[2]/2 + ur[2]/2)
+            # top_v = int(ul[3]/2 + ur[3]/2)
+            # cv2.line(color_canny, (bot_u, bot_v), (top_u, top_v), (255,0,0), 3, cv2.LINE_AA)
+            # cv2.imshow('out', color_canny)
+            # cv2.waitKey(0)
 
             return ((bot_x, bot_y),(top_x, top_y))
 
