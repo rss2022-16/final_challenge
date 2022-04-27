@@ -11,7 +11,7 @@ from sensor_msgs.msg import Image
 from ackermann_msgs.msg import AckermannDriveStamped
 from geometry_msgs.msg import Point
 
-from image_processing import *
+from detector import *
 from purepursuit import *
 
 class LaneFollower():
@@ -41,7 +41,6 @@ class LaneFollower():
         img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
 
         pathFinder = Detector()
-
         pt1, pt2 = pathFinder.imgtoline(img)
         x, y = self.extendLine(pt1, pt2)
 
