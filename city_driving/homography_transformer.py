@@ -52,7 +52,6 @@ class HomographyTransformer:
 
         self.drawing = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color_mouse_left", Point, self.call_marker)
 
-        print ("started")
         self.marker_pub = rospy.Publisher("/cone_marker",
             Marker, queue_size=1)
 
@@ -73,7 +72,6 @@ class HomographyTransformer:
 
 
     def call_marker(self, msg):
-        print ("ENTERED")
         u = msg.x
         v = msg.y
 
@@ -99,8 +97,8 @@ class HomographyTransformer:
 
     def line_detection_callback(self, msg):
         #Extract information from message
-        u = msg.u
-        v = msg.v
+        u = msg.y
+        v = msg.x
 
         #Call to main function
         x, y = self.transformUvToXy(u, v)

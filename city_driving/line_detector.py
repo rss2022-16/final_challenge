@@ -27,7 +27,7 @@ class LineDetector():
         # Subscribe to ZED camera RGB frames
         self.cone_pub = rospy.Publisher("/relative_cone_px", Point, queue_size=10)
         self.line_detector_pub = rospy.Publisher("/line_detector", Bool, queue_size=10)
-        #self.debug_pub = rospy.Publisher("/cone_debug_img", Image, queue_size=10)
+        self.debug_pub = rospy.Publisher("/cone_debug_img", Image, queue_size=10)
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
         self.bridge = CvBridge() # Converts between ROS images and OpenCV Images
 
@@ -40,7 +40,7 @@ class LineDetector():
 
         image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
         #print (image.shape)
-        image = image[215:235, :, :] 
+        image = image[215:320, :, :] 
         bbox = cd_color_segmentation(image, None, "orange")
         bottom_pixel = ( (bbox[1][0] + bbox[0][0])/2.0, bbox[1][1])
         pixel = Point()
@@ -60,8 +60,8 @@ class LineDetector():
         self.line_detector_pub.publish(detected)
 
         #image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
-        # debug_msg = self.bridge.cv2_to_imgmsg(image, "bgr8")
-        # self.debug_pub.publish(debug_msg)
+        debug_msg = self.bridge.cv2_to_imgmsg(image, "bgr8")
+        self.debug_pub.publish(debug_msg)
 
 
 if __name__ == '__main__':

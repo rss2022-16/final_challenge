@@ -7,11 +7,11 @@ from geometry_msgs.msg import PoseStamped, PoseArray, Point
 from nav_msgs.msg import Odometry
 import rospkg
 import time, os
-from utils import LineTrajectory
+#from utils import LineTrajectory
 import tf
 from scipy.ndimage import binary_dilation, generate_binary_structure, iterate_structure
 from ackermann_msgs.msg import AckermannDriveStamped
-from std_msgs import Bool
+from std_msgs.msg import Bool
 
 class CityDriver(object):
     """ 
@@ -27,14 +27,17 @@ class CityDriver(object):
         self.blue_follower_sub = rospy.Subscriber("/blue_follower", AckermannDriveStamped, self.blue_follower_cb)
         self.safety_sub = rospy.Subscriber("/safety", AckermannDriveStamped, self.safety_cb)
 
-        DRIVE_TOPIC = rospy.get_param("~drive_topic")
+        DRIVE_TOPIC = rospy.get_param("~drive_topic", "/vesc/ackermann_cmd_mux/input/navigation")
         self.drive_pub = rospy.Publisher(DRIVE_TOPIC, AckermannDriveStamped, queue_size=10)
 
-        SAFETY_TOPIC = rospy.get_param("~safety_topic")
+        SAFETY_TOPIC = rospy.get_param("~safety_topic", "/vesc/low_level/ackermann_cmd_mux/input/safety")
         self.safety_pub = rospy.Publisher(SAFETY_TOPIC, AckermannDriveStamped, queue_size=10)
 
         self.state = "Default"
         self.prev_blue = False
+        
+        
+        self.send_drive(1,0)
         # self.exit_wash = False
 
     def line_detected_cb(self, msg):

@@ -6,22 +6,10 @@
   <node pkg="final_challenge" name="state_machine2" type="state_machine2.py" output="screen">
   </node>
 
-  <node pkg="final_challenge" name="stop_detector" type="stop_detector.py" output="screen">
-  </node>
-
-   <node pkg="final_challenge" name="detector" type="detector.py" output="screen">
-  </node>
-
   <node pkg="final_challenge" name="homography_transformer" type="homography_transformer.py" output="screen">
   </node>
 
-  <node pkg="final_challenge" name="blue_follower" type="blue_follower.py"  output="screen">
-  </node>
-
   <node pkg="final_challenge" name="line_follower" type="line_follower.py"  output="screen">
-  </node>
-
-  <node pkg="final_challenge" name="car_wash_detector" type="car_wash_detector.py"  output="screen">
   </node>
 
   <node pkg="final_challenge" name="color_segmentation" type="color_segmentation.py"  output="screen">
@@ -31,9 +19,6 @@
   </node>
 
   <node pkg="final_challenge" name="pure_pursuit" type="pure_pursuit.py"  output="screen">
-  </node>
-
-  <node pkg="final_challenge" name="wall_follower" type="wall_follower.py"  output="screen">
   </node>
 
 </launch>
