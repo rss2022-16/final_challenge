@@ -1,5 +1,8 @@
+#!/usr/bin/env python
+
 import cv2
 import numpy as np
+import rospy
 
 class Detector():
 
@@ -24,12 +27,12 @@ class Detector():
     crop_cutoff = 2/5
 
     ## Lane detecting
-    angle_cutoff = np.pi/2 ## NOTE - IN X,Y COORDS meaning 0deg = vertical!
+    angle_cutoff = np.pi/4 ## NOTE - IN X,Y COORDS meaning 0deg = vertical!
 
     
     def __init__(self):
 
-        cv2.namedWindow("out", cv2.WINDOW_NORMAL)
+        # cv2.namedWindow("out", cv2.WINDOW_NORMAL)
 
         #Initialize data into a homography matrix
         np_pts_ground = np.array(self.PTS_GROUND_PLANE)
@@ -57,7 +60,7 @@ class Detector():
 
         # Edge Detection
         canny = cv2.Canny(mask, 50, 200, None, 3)
-        color_canny = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
+        # color_canny = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
 
         # Crop
         y0, yf = int(self.crop_cutoff * self.height), self.height
@@ -65,10 +68,13 @@ class Detector():
         cropped[y0:yf,:] = canny[y0:yf,:]
 
         # Hough Transform
-        linesP = cv2.HoughLinesP(cropped, 1, np.pi / 180, 50, None, 80, 10)
-        for line in linesP:
-            l = line[0]
-            cv2.line(color_canny, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
+        linesP = cv2.HoughLinesP(cropped, 1, np.pi / 180, 80, None, 80, 10)
+        if linesP is None:
+            rospy.loginfo("No lines detected")
+            return (None, None)
+        # for line in linesP:
+        #     l = line[0]
+        #     cv2.line(color_canny, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
 
         # Homography
         reallines = []
@@ -92,7 +98,7 @@ class Detector():
             angle = np.arctan2(r[3]-r[1], r[2]-r[0])
 
             # Left lane?
-            if l[1] < self.mid and abs(angle) < self.angle_cutoff:
+            if l[0] < self.mid and abs(angle) < self.angle_cutoff:
                 if left is None:
                     left = r
                     ul = l
@@ -101,7 +107,7 @@ class Detector():
                     ul = l
 
             # Right lane?
-            if l[1] > self.mid and abs(angle) < self.angle_cutoff:
+            if l[0] > self.mid and abs(angle) < self.angle_cutoff:
                 if right is None:
                     right = r
                     ur = l
@@ -138,7 +144,8 @@ class Detector():
             return ((bot_x, bot_y),(top_x, top_y))
 
         else:
-
+            
+            rospy.loginfo("Both lanes not detected")
             return (None,None)
         
 

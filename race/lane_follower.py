@@ -40,10 +40,10 @@ class LaneFollower():
         img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
 
         pt1, pt2 = self.pathFinder.imgtoline(img)
-        x, y = self.extendLine(pt1, pt2)
 
-        if x is not None:
+        if pt1 is not None:
 
+            x, y = self.extendLine(pt1, pt2)
             waypoints = np.array(([self.lidar_to_base_axel, 0], \
                     [self.lidar_to_base_axel + x, y]))
 
@@ -57,12 +57,12 @@ class LaneFollower():
             x1 = pt1[0]
             y1 = pt1[1]
             x2 = pt2[0]
-            y2 = pt2[2]
+            y2 = pt2[1]
         else:
             x1 = pt2[0]
             y1 = pt2[1]
             x2 = pt1[0]
-            y2 = pt1[2]
+            y2 = pt1[1]
 
         m = (y2-y1)/(x2-x1)
 

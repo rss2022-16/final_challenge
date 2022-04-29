@@ -1,5 +1,5 @@
 lidar_to_base_axel : -0.35 
-lookahead_distance : 1.5
+lookahead_distance : 2
 L : 0.375
-vel : 1
+vel : 4
 extend_dist : 5
