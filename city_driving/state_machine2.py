@@ -19,25 +19,23 @@ class CityDriver(object):
 
     def __init__(self):
         # self.odom_topic = rospy.get_param("~odom_topic")
+        self.state = "Default"
         self.line_detector_sub = rospy.Subscriber("/line_detector", Bool, self.line_detected_cb) # always sending messages
         self.line_follower_sub = rospy.Subscriber("/line_drive", AckermannDriveStamped, self.line_follower_cb)
-        self.wall_follower_sub = rospy.Subscriber("/wall_drive", AckermannDriveStamped, self.wall_follower_cb, queue_size=10)
-        self.stop_sign_sub = rospy.Subscriber("/stop_sign", Bool, self.stop_sign_cb)
-        self.car_wash_detector_sub = rospy.Subscriber("/car_wash_detector", Bool, self.car_wash_cb) # always sending messages
-        self.blue_follower_sub = rospy.Subscriber("/blue_follower", AckermannDriveStamped, self.blue_follower_cb)
-        self.safety_sub = rospy.Subscriber("/safety", AckermannDriveStamped, self.safety_cb)
+        #self.wall_follower_sub = rospy.Subscriber("/wall_drive", AckermannDriveStamped, self.wall_follower_cb, queue_size=10)
+        #self.stop_sign_sub = rospy.Subscriber("/stop_sign", Bool, self.stop_sign_cb)
+        #self.car_wash_detector_sub = rospy.Subscriber("/car_wash_detector", Bool, self.car_wash_cb) # always sending messages
+        #self.blue_follower_sub = rospy.Subscriber("/blue_follower", AckermannDriveStamped, self.blue_follower_cb)
+        #self.safety_sub = rospy.Subscriber("/safety", AckermannDriveStamped, self.safety_cb)
 
         DRIVE_TOPIC = rospy.get_param("~drive_topic", "/vesc/ackermann_cmd_mux/input/navigation")
         self.drive_pub = rospy.Publisher(DRIVE_TOPIC, AckermannDriveStamped, queue_size=10)
 
-        SAFETY_TOPIC = rospy.get_param("~safety_topic", "/vesc/low_level/ackermann_cmd_mux/input/safety")
-        self.safety_pub = rospy.Publisher(SAFETY_TOPIC, AckermannDriveStamped, queue_size=10)
+        #SAFETY_TOPIC = rospy.get_param("~safety_topic", "/vesc/low_level/ackermann_cmd_mux/input/safety")
+        #self.safety_pub = rospy.Publisher(SAFETY_TOPIC, AckermannDriveStamped, queue_size=10)
 
-        self.state = "Default"
         self.prev_blue = False
         
-        
-        self.send_drive(1,0)
         # self.exit_wash = False
 
     def line_detected_cb(self, msg):
@@ -60,7 +58,7 @@ class CityDriver(object):
         self.stop_cb(begin_time)
     
     def stop_cb(self, begin_time):
-        while rospy.Time.now() - begin_time < 3:
+        while (rospy.Time.now() - begin_time).to_sec() < 3:
             self.send_drive(0, 0)
         self.state = "Default"
 

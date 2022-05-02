@@ -38,13 +38,13 @@ def cd_color_segmentation(img, template, color_to_detect = "orange"):
         color_min = np.array([90, 50, 70])
         color_max = np.array([128, 255, 255])
     elif color_to_detect == "orange":
-        color_min = np.array([5, 50, 125])
-        color_max = np.array([15, 255, 255])
+        color_min = np.array([4, 150, 100])
+        color_max = np.array([25, 255, 255])
     hsv_image = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     # image_print(hsv_image)
     mask = cv2.inRange(hsv_image, color_min, color_max)
 	# image_print(mask)
-    erosion_kernel = np.ones((15,15), np.uint8)
+    erosion_kernel = np.ones((5,5), np.uint8)
     img_erosion = cv2.erode(mask, erosion_kernel, iterations=1)
     # image_print(img_erosion)
     dilation_kernel = np.ones((20,20), np.uint8)
@@ -56,7 +56,7 @@ def cd_color_segmentation(img, template, color_to_detect = "orange"):
 
     x,y,w,h = cv2.boundingRect(contours[0])
     #out = cv2.rectangle(img, (x,y), (x+w, y+h),(0,255,0),2)
-	#image_print(out)e
+    #image_print(out)
     bounding_box = ((x,y),(x+w,y+h))
 
     # Return bounding box
@@ -64,5 +64,5 @@ def cd_color_segmentation(img, template, color_to_detect = "orange"):
 
 
 if __name__ == "__main__":
-	img = cv2.imread('./test_images_cone/test14.jpg')
+	img = cv2.imread('./msg/third.png')
 	cd_color_segmentation(img, None)

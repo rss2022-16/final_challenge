@@ -100,16 +100,26 @@ class HomographyTransformer:
         u = msg.y
         v = msg.x
 
-        #Call to main function
-        x, y = self.transformUvToXy(u, v)
+        if int(v) == -15:
+            relative_msg = Point()
+            relative_msg.x = -15
 
-        #Publish relative xy position of object in real world
-        relative_xy_msg = Point()
-        relative_xy_msg.x = x
-        relative_xy_msg.y = y
 
-        self.line_pub.publish(relative_xy_msg)
-        self.draw_marker(x,y,"base_link")
+            relative_msg.y = 0
+            self.line_pub.publish(relative_msg)
+            rospy.loginfo("ENTERED")
+        else:
+
+            #Call to main function
+            x, y = self.transformUvToXy(u, v)
+
+            #Publish relative xy position of object in real world
+            relative_xy_msg = Point()
+            relative_xy_msg.x = x
+            relative_xy_msg.y = y
+
+            self.line_pub.publish(relative_xy_msg)
+            self.draw_marker(x,y,"base_link")
 
     def transformUvToXy(self, u, v):
         """

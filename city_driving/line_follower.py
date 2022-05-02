@@ -15,12 +15,12 @@ class ParkingController():
     Can be used in the simulator and on the real robot.
     """
 
-    PARK_DIST = rospy.get_param("line_follower_parking_distance", 0.3) # meters; try playing with this number!
-    VEL = rospy.get_param("line_follower_velocity", 0.6)  
+    PARK_DIST = rospy.get_param("line_follower_parking_distance", .2) # meters; try playing with this number!
+    VEL = rospy.get_param("line_follower_velocity", 0.4)  
 
     # PP Stuff
     LIDAR_TO_BASE_AXEL = -0.35 # Temporary parameter
-    LOOKAHEAD_DISTANCE = .4
+    LOOKAHEAD_DISTANCE = 1.0
     L = 0.375
 
     # Controller Stuff
@@ -38,15 +38,24 @@ class ParkingController():
         self.relative_x = 0
         self.relative_y = 0
         self.backward = False
+        self.last_drive = None
+
+        self.send_drive(.1, 0)
 
 
     def relative_cone_callback(self, msg):
         self.relative_x = msg.x
         self.relative_y = msg.y
         
+        if int(msg.x) == -15 and self.last_drive != None:
+            self.send_drive(0, -.2)
+            rospy.loginfo("ENTERED")
+        
+
+
         # Are we here
-        if abs(self.distance() - self.PARK_DIST) <= self.GOOD_EPS and abs(self.angle()) <= self.ANG_EPS:
-            
+        elif abs(self.distance() - self.PARK_DIST) <= self.GOOD_EPS and abs(self.angle()) <= self.ANG_EPS:
+            rospy.loginfo("SENDING ZEROS") 
             ## DONE
             eta = 0
             vel = 0
@@ -70,11 +79,11 @@ class ParkingController():
                 self.backward = False
 
             # Reverse PP
-            #if self.backward:
-             #   eta = -1 * eta
-              #  vel = -1 * vel
+           # if self.backward:
+                #eta = -1 * eta
+                #vel = -1 * vel
                 
-        self.send_drive(eta, vel)
+            self.send_drive(eta, vel)
         # self.error_publisher()
 
 
@@ -102,6 +111,7 @@ class ParkingController():
         msg.header.frame_id = "base_link"
         msg.drive.steering_angle = eta
         msg.drive.speed = vel
+        self.last_drive = msg
         self.drive_pub.publish(msg)
 
     def distance(self):

@@ -29,7 +29,8 @@ class LineDetector():
         self.line_detector_pub = rospy.Publisher("/line_detector", Bool, queue_size=10)
         self.debug_pub = rospy.Publisher("/cone_debug_img", Image, queue_size=10)
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
-        self.bridge = CvBridge() # Converts between ROS images and OpenCV Images
+        self.bridge = CvBridge()
+        self.prev_pixel = None# Converts between ROS images and OpenCV Images
 
     def image_callback(self, image_msg):
         # Applies imported color segmentation function (cd_color_segmentation) to the image msg here
@@ -40,23 +41,31 @@ class LineDetector():
 
         image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
         #print (image.shape)
-        image = image[215:320, :, :] 
+        image = image[150:300, :, :] 
         bbox = cd_color_segmentation(image, None, "orange")
-        bottom_pixel = ( (bbox[1][0] + bbox[0][0])/2.0, bbox[1][1])
+        bottom_pixel = ((bbox[1][0] + bbox[0][0])/2.0, bbox[1][1])
         pixel = Point()
+
         #print (bottom_pixel)
-        u = bottom_pixel[0] + 0
-        v = bottom_pixel[1] + 215
-        pixel.y = u
-        pixel.x = v
+        
+        u = bottom_pixel[0]
+        v = bottom_pixel[1] 
         #print (pixel.v)
-        self.cone_pub.publish(pixel)
+        #self.cone_pub.publish(pixel)
 
         detected = Bool()
-        if u != 0 or v!= 0:
+        if int(u) != 0 or int(v)!= 0:
             detected.data = True
+            pixel.y = u
+            pixel.x = v + 150
+            self.cone_pub.publish(pixel)
+            self.prev_pixel = pixel
         else:
             detected.data = False
+            pixel.x = -15
+            pixel.y = 0
+            self.cone_pub.publish(pixel)
+            rospy.loginfo("NOT DETECTED")
         self.line_detector_pub.publish(detected)
 
         #image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
