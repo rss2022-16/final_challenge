@@ -1,0 +1,10 @@
+<launch>
+
+  <node pkg="final_challenge" name="safety_controller" type="safety_controller.py" output="screen"/>
+
+  <node pkg="final_challenge" name="line_follower" type="line_follower.py" output="screen">
+    <rosparam cmd="load" file=find($)
+  </node>
+
+
+</launch>

@@ -10,6 +10,7 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
 from ackermann_msgs.msg import AckermannDriveStamped
 from pure_pursuit import *
+from detector import *
 
 class LineFollower():
     """
@@ -26,20 +27,33 @@ class LineFollower():
 
     def __init__(self):
         # Subscribe to ZED camera RGB frames
-        self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=10)
+        DRIVE_TOPIC = rospy.get_param("~drive_topic") #"/vesc/ackermann_cmd_mux/input/navigation"
+        self.vel = rospy.get_param("~vel")
+        self.lidar_to_base_axel = rospy.get_param("~lidar_to_base_axel")
+        self.lookahead_distance = rospy.get_param("~lookahead_distance")
+        self.L = rospy.get_param("~L")
+
+        self.drive_pub = rospy.Publisher(DRIVE_TOPIC, AckermannDriveStamped, queue_size=10)
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
         self.bridge = CvBridge()
+
+        self.pathFinder = Detector()
 
     def image_callback(self, image_msg):
 
         image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
-        image = image[150:300, :, :]
+        lines = self.pathFinder.imgtopath(img)
 
-        waypoints = np.array(([self.LIDAR_TO_BASE_AXEL, 0], \
-            [self.LIDAR_TO_BASE_AXEL + 5*self.relative_x, 5*self.relative_y]))
+        if lines is None:
+            rospy.loginfo("No lines detected")
+            return
 
-        eta, vel = purepursuit(self.LOOKAHEAD_DISTANCE, self.L, self.VEL, 
-            self.LIDAR_TO_BASE_AXEL, 0, 0, waypoints)
+        eta, vel = purepursuit(self.lookahead_distance, self.L, self.vel, 
+            self.lidar_to_base_axel, 0, 0, lines)
+
+        if eta is None:
+            rospy.loginfo("No purepursuit intersection found")
+            return
 
         self.send_drive(eta, vel)
 
