@@ -1,10 +1,9 @@
 <launch>
 
-  <node pkg="final_challenge" name="safety_controller" type="safety_controller.py" output="screen"/>
+  <node pkg="city_driving" name="safety_controller" type="safety_controller.py" output="screen"/>
 
-  <node pkg="final_challenge" name="line_follower" type="line_follower.py" output="screen">
-    <rosparam cmd="load" file=find($)
+  <node pkg="city_driving" name="line_follower" type="line_follower.py" output="screen">
+    <rosparam file="$(find city_driving)/params.yaml" />
   </node>
-
 
 </launch>

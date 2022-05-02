@@ -18,13 +18,6 @@ class LineFollower():
     Publishes to: /drive
     """
 
-    VEL = rospy.get_param("~line_follower_velocity", 0.3)  
-
-    # PP Stuff
-    LIDAR_TO_BASE_AXEL = -0.35 # Temporary parameter
-    LOOKAHEAD_DISTANCE = 1.0
-    L = 0.375
-
     def __init__(self):
         # Subscribe to ZED camera RGB frames
         DRIVE_TOPIC = rospy.get_param("~drive_topic") #"/vesc/ackermann_cmd_mux/input/navigation"

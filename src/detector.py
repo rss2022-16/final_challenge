@@ -26,8 +26,6 @@ class Detector():
     
     def __init__(self):
 
-        # cv2.namedWindow("out", cv2.WINDOW_NORMAL)
-
         #Initialize data into a homography matrix
         np_pts_ground = np.array(self.PTS_GROUND_PLANE)
         np_pts_ground = np_pts_ground * self.METERS_PER_INCH
@@ -53,7 +51,6 @@ class Detector():
 
         # Edge Detection
         canny = cv2.Canny(mask, 50, 200, None, 3)
-        # color_canny = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
 
         # Crop
         cropped = np.zeros(canny.shape,np.uint8)
@@ -63,9 +60,6 @@ class Detector():
         linesP = cv2.HoughLinesP(cropped, 1, np.pi / 180, 80, None, 80, 10)
         if linesP is None:
             return None
-        # for line in linesP:
-        #     l = line[0]
-        #     cv2.line(color_canny, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
 
         # Homography
         reallines = []
@@ -106,3 +100,6 @@ if __name__ == "__main__":
     img = cv2.imread("lane.jpg")
     detector = Detector()
     lines = detector.imgtopath(img)
+    cv2.namedWindow("out", cv2.WINDOW_NORMAL)
+    for l in lines:
+        cv2.line(img, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)

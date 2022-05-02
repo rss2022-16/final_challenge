@@ -1,6 +1,12 @@
+# Line follower stuff
+vel : 0.3
+lidar_to_base_axel : -0.35
+lookahead_distance : 0.75
+L : 0.375
+
 drive_topic: "vesc/ackermann_cmd_mux/input/navigation"
 
-odom_topic: "/pf/pose/odom"
+# Safety controller stuff
 
 scan_topic: "/scan"
 safety_topic: "/vesc/low_level/ackermann_cmd_mux/input/safety"
@@ -9,14 +15,3 @@ drive_comm_timeout: 0.5
 scan_comm_timeout: 0.5
 collision_interval: 0.5
 length: .15
-
-side: 1
-wall_follower_velocity: 0.2
-wall_follower_desired_distance: 1.
-
-parking_controller_velocity: 0.2
-
-line_follower_velocity: .6
-line_follower_parking_distance: 0.3
-line_follower_goal_range: 0.05
-line_follower_y_tolerance: 0.05
