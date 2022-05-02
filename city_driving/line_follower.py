@@ -1,105 +1,47 @@
 #!/usr/bin/env python
 
-import rospy
 import numpy as np
+import rospy
 
-# from msg import ConeLocation, ParkingError
+import cv2
+from cv_bridge import CvBridge
+
+from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
 from ackermann_msgs.msg import AckermannDriveStamped
 from pure_pursuit import *
 
-class ParkingController():
+class LineFollower():
     """
-    A controller for parking in front of a cone.
-    Listens for a relative cone location and publishes control commands.
-    Can be used in the simulator and on the real robot.
+    Subscribes to: /zed/zed_node/rgb/image_rect_color (Image) : the live RGB image from the onboard ZED camera.
+    Publishes to: /drive
     """
 
-    PARK_DIST = rospy.get_param("line_follower_parking_distance", .2) # meters; try playing with this number!
-    VEL = rospy.get_param("line_follower_velocity", 0.4)  
+    VEL = rospy.get_param("~line_follower_velocity", 0.3)  
 
     # PP Stuff
     LIDAR_TO_BASE_AXEL = -0.35 # Temporary parameter
     LOOKAHEAD_DISTANCE = 1.0
     L = 0.375
 
-    # Controller Stuff
-    GOOD_EPS = rospy.get_param("line_follower_goal_range", 0.05)
-    PARK_TOL = rospy.get_param("line_follower_y_tolerance", 0.05)  
-    ANG_EPS = abs(np.arctan(PARK_TOL / PARK_DIST))
-
     def __init__(self):
+        # Subscribe to ZED camera RGB frames
+        self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=10)
+        self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
+        self.bridge = CvBridge()
 
-        #DRIVE_TOPIC = rospy.get_param("~drive_topic")    
-        rospy.Subscriber("/line", Point, self.relative_cone_callback)
-        self.drive_pub = rospy.Publisher("/line_drive", AckermannDriveStamped, queue_size=10)
-        # self.error_pub = rospy.Publisher("/parking_error", ParkingError, queue_size=10)
-        
-        self.relative_x = 0
-        self.relative_y = 0
-        self.backward = False
-        self.last_drive = None
+    def image_callback(self, image_msg):
 
-        self.send_drive(.1, 0)
+        image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
+        image = image[150:300, :, :]
 
+        waypoints = np.array(([self.LIDAR_TO_BASE_AXEL, 0], \
+            [self.LIDAR_TO_BASE_AXEL + 5*self.relative_x, 5*self.relative_y]))
 
-    def relative_cone_callback(self, msg):
-        self.relative_x = msg.x
-        self.relative_y = msg.y
-        
-        if int(msg.x) == -15 and self.last_drive != None:
-            self.send_drive(0, -.2)
-            rospy.loginfo("ENTERED")
-        
+        eta, vel = purepursuit(self.LOOKAHEAD_DISTANCE, self.L, self.VEL, 
+            self.LIDAR_TO_BASE_AXEL, 0, 0, waypoints)
 
-
-        # Are we here
-        elif abs(self.distance() - self.PARK_DIST) <= self.GOOD_EPS and abs(self.angle()) <= self.ANG_EPS:
-            rospy.loginfo("SENDING ZEROS") 
-            ## DONE
-            eta = 0
-            vel = 0
-
-        else:
-
-            ## Do we need to define a line and stick with it, or can we re-define every timestep?
-
-            waypoints = np.array(([self.LIDAR_TO_BASE_AXEL, 0], \
-                [self.LIDAR_TO_BASE_AXEL + 5*self.relative_x, 5*self.relative_y]))
-
-            eta, vel = purepursuit(self.LOOKAHEAD_DISTANCE, self.L, self.VEL, 
-                self.LIDAR_TO_BASE_AXEL, 0, 0, waypoints)
-            
-            # Backward PP if we are close
-            if self.distance() < self.PARK_DIST - self.GOOD_EPS:
-                self.backward = True
-
-            # Forward PP if we are far
-            if self.distance() > self.PARK_DIST + self.GOOD_EPS:
-                self.backward = False
-
-            # Reverse PP
-           # if self.backward:
-                #eta = -1 * eta
-                #vel = -1 * vel
-                
-            self.send_drive(eta, vel)
-        # self.error_publisher()
-
-
-    # def error_publisher(self):
-    #     """
-    #     Publish the error between the car and the cone. We will view this
-    #     with rqt_plot to plot the success of the controller
-    #     """
-    #     error_msg = ParkingError()
-
-    #     error_msg.x_error = self.relative_x
-    #     error_msg.y_error = self.relative_y
-    #     error_msg.distance_error = self.distance()
-        
-    #     self.error_pub.publish(error_msg)
-
+        self.send_drive(eta, vel)
 
     def send_drive(self, eta, vel):
         """
@@ -114,16 +56,11 @@ class ParkingController():
         self.last_drive = msg
         self.drive_pub.publish(msg)
 
-    def distance(self):
-        return np.sqrt(self.relative_x**2 + self.relative_y**2)
-
-    def angle(self):
-        return np.arctan(self.relative_y / self.relative_x)
 
 if __name__ == '__main__':
     try:
-        rospy.init_node('ParkingController', anonymous=True)
-        ParkingController()
+        rospy.init_node('LineFollower', anonymous=True)
+        node = LineFollower()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
