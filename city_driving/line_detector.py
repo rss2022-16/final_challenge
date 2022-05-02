@@ -40,18 +40,13 @@ class LineDetector():
         # convert it to the car frame.
 
         image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
-        #print (image.shape)
         image = image[150:300, :, :] 
         bbox = cd_color_segmentation(image, None, "orange")
         bottom_pixel = ((bbox[1][0] + bbox[0][0])/2.0, bbox[1][1])
         pixel = Point()
-
-        #print (bottom_pixel)
         
         u = bottom_pixel[0]
         v = bottom_pixel[1] 
-        #print (pixel.v)
-        #self.cone_pub.publish(pixel)
 
         detected = Bool()
         if int(u) != 0 or int(v)!= 0:
