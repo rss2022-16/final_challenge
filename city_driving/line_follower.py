@@ -16,7 +16,7 @@ class ParkingController():
     """
 
     PARK_DIST = rospy.get_param("line_follower_parking_distance", .2) # meters; try playing with this number!
-    VEL = rospy.get_param("line_follower_velocity", 0.4)  
+    VEL = rospy.get_param("line_follower_velocity", 0.55)  
 
     # PP Stuff
     LIDAR_TO_BASE_AXEL = -0.35 # Temporary parameter
@@ -48,8 +48,7 @@ class ParkingController():
         self.relative_y = msg.y
         
         if int(msg.x) == -15 and self.last_drive != None:
-            self.send_drive(0, -.2)
-            rospy.loginfo("ENTERED")
+            self.send_drive(0, -.3)
         
 
 

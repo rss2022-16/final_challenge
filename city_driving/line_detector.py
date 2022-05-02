@@ -65,7 +65,6 @@ class LineDetector():
             pixel.x = -15
             pixel.y = 0
             self.cone_pub.publish(pixel)
-            rospy.loginfo("NOT DETECTED")
         self.line_detector_pub.publish(detected)
 
         #image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")

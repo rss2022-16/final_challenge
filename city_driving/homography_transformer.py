@@ -107,7 +107,6 @@ class HomographyTransformer:
 
             relative_msg.y = 0
             self.line_pub.publish(relative_msg)
-            rospy.loginfo("ENTERED")
         else:
 
             #Call to main function
