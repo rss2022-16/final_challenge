@@ -8,6 +8,7 @@ Generic pure pursuit control law for bicycle dynamics model
 ## Note - does radius of curvature calculation still work for q =/ 0?
 """
 import numpy as np
+import rospy
 
 def purepursuit(ld, L, vel_des, x, y, q, waypoints):
     """
@@ -15,6 +16,7 @@ def purepursuit(ld, L, vel_des, x, y, q, waypoints):
     returns an instantaneous x linear velocity and steering angle eta to follow trajectory
     """
     goal = look_ahead(ld, x, y, waypoints) # Instantaneous goal - lookahead point
+    # rospy.loginfo(["Goal point from axel: ", goal])
     R = (ld*ld)/(2*goal[1]) # Radius of curvature connecting these points
 
     # Control law !!
@@ -48,11 +50,11 @@ def look_ahead(ld, x, y, waypoints):
             # p1 will always be farther than p2
             if p1 >= 0 and p1 <= 1:
                 # Successful intersection
-                return p1 * seg_vec + waypoints[i]
+                return p1 * seg_vec + rover_vec
                 
             if p2 >= 0 and p2 <= 1:
                 # Successful intersection
-                return p2 * seg_vec + waypoints[i]
+                return p2 * seg_vec + rover_vec
     
     # If nothing found
     return waypoints[0,:]

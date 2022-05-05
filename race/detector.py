@@ -30,7 +30,7 @@ class Detector():
     angle_cutoff = np.pi/4 ## NOTE - IN X,Y COORDS meaning 0deg = vertical!
 
     
-    def __init__(self):
+    def __init__(self, lane_offset, extend_dist):
 
         # cv2.namedWindow("out", cv2.WINDOW_NORMAL)
 
@@ -43,6 +43,9 @@ class Detector():
         np_pts_image = np.float32(np_pts_image[:, np.newaxis, :])
         self.h, err = cv2.findHomography(np_pts_image, np_pts_ground)
 
+        self.lane_offset = lane_offset
+        self.extend_dist = extend_dist
+
     def imgtoline(self, img):
         """
         Given a ros image type, return detected line in x,y local robot coordinates. 
@@ -54,23 +57,23 @@ class Detector():
         # Blur
         blurred = cv2.GaussianBlur(img,(self.kernel_size, self.kernel_size),0)
 
+        # Crop
+        y0, yf = int(self.crop_cutoff * self.height), self.height
+        cropped = np.zeros(blurred.shape,np.uint8)
+        cropped[y0:yf,:] = blurred[y0:yf,:]
+
         # Color Filtering
-        hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+        hsv = cv2.cvtColor(cropped, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, self.lower_white, self.upper_white)
 
         # Edge Detection
         canny = cv2.Canny(mask, 50, 200, None, 3)
         # color_canny = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
 
-        # Crop
-        y0, yf = int(self.crop_cutoff * self.height), self.height
-        cropped = np.zeros(canny.shape,np.uint8)
-        cropped[y0:yf,:] = canny[y0:yf,:]
-
         # Hough Transform
-        linesP = cv2.HoughLinesP(cropped, 1, np.pi / 180, 80, None, 80, 10)
+        linesP = cv2.HoughLinesP(canny, 1, np.pi / 180, 80, None, 80, 10)
         if linesP is None:
-            rospy.loginfo("No lines detected")
+            # rospy.loginfo("No lines detected")
             return (None, None)
         # for line in linesP:
         #     l = line[0]
@@ -92,62 +95,102 @@ class Detector():
         left, right = None, None
         for i in range(len(linesP)):
             r = reallines[i]
-            l = linesP[i][0]
+            # l = linesP[i][0]
 
-            dist = np.sqrt(r[0]**2 + r[1]**2)
             angle = np.arctan2(r[3]-r[1], r[2]-r[0])
+            # Avoid angle ambiguity
+            if abs(angle + np.pi) < abs(angle):
+                angle += np.pi
+            elif abs(angle - np.pi) < abs(angle):
+                angle += -np.pi
+            m = (r[3] - r[1]) / (r[2] - r[0])
+            b = r[1] - m * r[0]
+            # rospy.loginfo([m, b, angle])
 
             # Left lane?
-            if l[0] < self.mid and abs(angle) < self.angle_cutoff:
+            if b > 0 and abs(angle) < self.angle_cutoff:
                 if left is None:
                     left = r
-                    ul = l
-                elif dist < np.sqrt(left[0]**2 + left[1]**2):
+                    # ul = l
+                    prev_b_l = b
+                elif b < prev_b_l:
                     left = r
-                    ul = l
+                    # ul = l
+                    prev_b_l = b
 
             # Right lane?
-            if l[0] > self.mid and abs(angle) < self.angle_cutoff:
+            if b < 0 and abs(angle) < self.angle_cutoff:
                 if right is None:
                     right = r
-                    ur = l
-                elif dist < np.sqrt(right[0]**2 + right[1]**2):
+                    # ur = l
+                    prev_b_r = b
+                elif b > prev_b_r:
                     right = r
-                    ur = l
+                    # ur = l
+                    prev_b_r = b
+        
+        # rospy.loginfo([left, prev_b_l, right, prev_b_r])
 
         # print(ur[0], ur[1], ur[2], ur[3])
         # print(right[0], right[1], right[2], right[3])
         # print(ul[0], ul[1], ul[2], ul[3])
         # print(left[0], left[1], left[2], left[3])
-
-        # If we detected lanes
-        if left is not None and right is not None:
-
-            # cv2.line(color_canny, (ul[0], ul[1]), (ul[2], ul[3]), (0,255,0), 3, cv2.LINE_AA)
-            # cv2.line(color_canny, (ur[0], ur[1]), (ur[2], ur[3]), (0,255,0), 3, cv2.LINE_AA)
-
-            # Average the two lanes
-            bot_x = left[0]/2 + right[0]/2
-            bot_y = left[1]/2 + right[1]/2
-            top_x = left[2]/2 + right[2]/2
-            top_y = left[3]/2 + right[3]/2
-
-            # ## Temp
-            # bot_u = int(ul[0]/2 + ur[0]/2)
-            # bot_v = int(ul[1]/2 + ur[1]/2)
-            # top_u = int(ul[2]/2 + ur[2]/2)
-            # top_v = int(ul[3]/2 + ur[3]/2)
-            # cv2.line(color_canny, (bot_u, bot_v), (top_u, top_v), (255,0,0), 3, cv2.LINE_AA)
-            # cv2.imshow('out', color_canny)
-            # cv2.waitKey(0)
-
-            return ((bot_x, bot_y),(top_x, top_y))
-
-        else:
-            
-            rospy.loginfo("Both lanes not detected")
-            return (None,None)
         
+        if left is None and right is None:
+            # rospy.loginfo("No lanes detected")
+            return (None, None)
+
+        if left is None:
+            # rospy.loginfo("Left not detected")
+            b = prev_b_r + self.lane_offset
+            mr = (right[3] - right[1]) / (right[2] - right[0])
+            bot_x = 0
+            bot_y = b
+            top_x = self.extend_dist
+            top_y = mr*self.extend_dist + b
+
+            return ((bot_x,bot_y),(top_x,top_y))
+        
+        if right is None:
+            # rospy.loginfo("Right not detected")
+            b = prev_b_l - self.lane_offset
+            ml = (left[3] - left[1]) / (left[2] - left[0])
+            bot_x = 0
+            bot_y = b
+            top_x = self.extend_dist
+            top_y = ml*self.extend_dist + b
+
+            return ((bot_x,bot_y),(top_x,top_y))
+
+        # cv2.line(color_canny, (ul[0], ul[1]), (ul[2], ul[3]), (0,255,0), 3, cv2.LINE_AA)
+        # cv2.line(color_canny, (ur[0], ur[1]), (ur[2], ur[3]), (0,255,0), 3, cv2.LINE_AA)
+
+        # Average the two lanes
+        b_avg = (prev_b_l + prev_b_r) / 2
+        mr = (right[3] - right[1]) / (right[2] - right[0])
+        ml = (left[3] - left[1]) / (left[2] - left[0])
+        m_avg = (mr + ml) / 2
+
+        bot_x = 0
+        bot_y = b_avg
+        top_x = self.extend_dist
+        top_y = m_avg*self.extend_dist + b_avg
+
+        # bot_x = left[0]/2 + right[0]/2
+        # bot_y = left[1]/2 + right[1]/2
+        # top_x = left[2]/2 + right[2]/2
+        # top_y = left[3]/2 + right[3]/2
+
+        # ## Temp
+        # bot_u = int(ul[0]/2 + ur[0]/2)
+        # bot_v = int(ul[1]/2 + ur[1]/2)
+        # top_u = int(ul[2]/2 + ur[2]/2)
+        # top_v = int(ul[3]/2 + ur[3]/2)
+        # cv2.line(color_canny, (bot_u, bot_v), (top_u, top_v), (255,0,0), 3, cv2.LINE_AA)
+        # cv2.imshow('out', color_canny)
+        # cv2.waitKey(0)
+
+        return ((bot_x, bot_y),(top_x, top_y))
 
     def transform(self, u, v):
         """
@@ -171,6 +214,6 @@ class Detector():
 if __name__ == "__main__":
 
     img = cv2.imread("lane.jpg")
-    detector = Detector()
+    detector = Detector(0.3, 10)
     line = detector.imgtoline(img)
     print(line)
